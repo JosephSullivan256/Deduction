@@ -1,4 +1,6 @@
-import Deduction from './deduction'
+import Deduction from './deduction/deduction';
+import {formulaFromString, formulaToString, formulaToLatex} from './deduction/formula';
+import {recognizeSubstitution} from './deduction/substitution';
 import Vec2 from './math/vec2';
 
 class Main {
@@ -8,11 +10,22 @@ class Main {
   constructor() {
     this.initCanvas();
 
-    let d = new Deduction("(p ^ q) ^ r",
-      new Deduction("p ^ q",
+    let formula = formulaFromString("(p0 or p1)");
+    console.log(formulaToString(formula));
+
+    let formula2 = formulaFromString("((not p0) or F)");
+    console.log(formulaToString(formula2));
+
+    console.log(formula);
+    console.log(formula2);
+
+    console.log(Array.from(recognizeSubstitution(formula, formula2).entries()));
+
+    let d = new Deduction("(p ∧ q) ∧ r",
+      new Deduction("p ∧ q",
         new Deduction("p"),
         new Deduction("q",
-          new Deduction("t->q"),
+          new Deduction("t→q"),
           new Deduction("t")
         )
       ),

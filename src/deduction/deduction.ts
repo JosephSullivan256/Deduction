@@ -1,10 +1,14 @@
-import Vec2 from './math/vec2'
+import Vec2 from '../math/vec2'
 
 export default class Deduction{
     children : Array<Deduction>;
+    property : string;
+    rule : string;
 
-    constructor(public property: string, ...children: Array<Deduction>) {
+    constructor(property: string, ...children: Array<Deduction>) {
         this.children = children;
+        this.property = property;
+        this.rule = "(A)"
     }
 
     private readonly spacing = new Vec2(100.0, 40.0);
@@ -36,8 +40,7 @@ export default class Deduction{
             ctx.lineTo(end.x,end.y);
             ctx.stroke();
 
-            let rule = "(^I)";
-            ctx.fillText("(^I)",end.x+ctx.measureText(rule).width*0.6,end.y)
+            ctx.fillText(this.rule,end.x+ctx.measureText(this.rule).width*0.6,end.y)
         }
 
         // draw children
