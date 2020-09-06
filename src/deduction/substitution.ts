@@ -1,52 +1,47 @@
-import {formulaEqual} from './formula';
+import {Symbol, Formula} from './formula';
 
-export function applySubstitution(base: any, sub: Map<number, any>) : any {
-    if(base.type == "contradiction") return base;
+export class Substitution {
+    private readonly mapping : Map<Symbol, Formula>;
 
-    if(base.type == "proposition"){
-        if(sub.has(base.n)) return sub.get(base.n);
-        return base;
+    constructor(pairs: Array<[Symbol, Formula]>) {
+        this.mapping = new Map<Symbol, Formula>(pairs);
     }
 
-    if(base.type == "not"){
-        return {
-            type:'not',
-            d:applySubstitution(base.d, sub)
+    conflictsWith(sub: Substitution) : boolean {
+        for (let [n, formula] of this.mapping.entries()) {
+            if(sub.has(n) && !this.get(n).equals(sub.get(n))) return true;
         }
+        return false;
     }
 
-    return {
-        type:base.type,
-        left:applySubstitution(base.left, sub),
-        right:applySubstitution(base.right, sub)
+    usedPropositions() : Set<Symbol>{
+        return new Set(this.mapping.keys());
     }
-}
 
-export function recognizeSubstitution(base: any, derived: any) : Map<number,any> | undefined {
-    let substitution = new Map<number,any>();
-    let valid = recognizeSubstitutionRecursive(base, derived, substitution);
-    if(valid) return substitution;
-    return undefined;
-}
-
-export function substitutionsContradict(sub1: Map<number, any>, sub2: Map<number, any>) : boolean {
-    for (let [n, formula] of sub1.entries()) {
-        if(sub2.has(n) && !formulaEqual(sub1.get(n),sub2.get(n))) return true;
-    }
-    return false;
-}
-
-function recognizeSubstitutionRecursive(base: any, derived: any, sub: Map<number,any>) : boolean {
-    if(base.type == "proposition") {
-        if(sub.has(base.n) && !formulaEqual(sub.get(base.n),derived)) return false;
-        sub.set(base.n, derived);
-    } else {
-        if(base.type != derived.type) return false;
-        if(base.type == "not"){
-            return recognizeSubstitutionRecursive(base.d, derived.d, sub);
-        } else if (base.type != "contradiction") {
-            return recognizeSubstitutionRecursive(base.left, derived.left, sub) && recognizeSubstitutionRecursive(base.right, derived.right, sub)
+    static consistent(subs: Array<Substitution>) : boolean {
+        for(let i = 0; i < subs.length; i++){
+            for(let j = i+1; j < subs.length; j++){
+                if(subs[i].conflictsWith(subs[j])) return false;
+            }
         }
+        return true;
     }
-    return true;
+
+    static join(subs: Array<Substitution>) : Substitution {
+        return subs.reduce((joinedSubs, sub)=>joinedSubs.join(sub));
+    }
+
+    // only well-behaved if "conflictsWith" returns false
+    join(sub: Substitution) : Substitution {
+        return new Substitution(Array.from(this.mapping.entries()).concat(Array.from(sub.mapping.entries())));
+    }
+
+    has(s: Symbol) : boolean {
+        return this.mapping.has(s);
+    }
+
+    get(s: Symbol) : Formula {
+        return this.mapping.get(s);
+    }
+    
 }

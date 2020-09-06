@@ -1,82 +1,204 @@
 import { Parser, Grammar } from 'nearley';
-import { isEqual } from 'lodash';
+import { Substitution } from './substitution';
 const grammar = require("../grammar/grammar.js");
 
-export function formulaEqual(a: any, b: any) : boolean {
-    // lodash will tell whether two objects are funcitonally equal, 
-    // rather than just checking if they are the same reference.
-    return isEqual(a,b);
+
+export enum FormulaType {
+    not, or, and, implies, proposition, contradiction
+}
+export type Symbol = number;
+
+
+abstract class FormulaBase {
+    abstract readonly type: FormulaType;
+
+    constructor(readonly subformulas: Array<Formula>) {}
+
+    get arity() : number {
+        return this.subformulas.length;
+    }
+
+    abstract toString() : string;
+    abstract toLatex() : string;
+    equals(formula: Formula) : boolean {
+        return this.type==formula.type &&
+            this.arity == formula.arity &&
+            this.subformulas.every((f,i)=>f.equals(formula.subformulas[i]));
+    }
+    usedPropositions() : Set<Symbol> {
+        let set = new Set<number>();
+        this.addUsedPropositions(set);
+        return set;
+    }
+    addUsedPropositions(set: Set<Symbol>) : void {
+        this.subformulas.forEach((f)=>f.addUsedPropositions(set));
+    }
+    recognizeSubstitution(derived: Formula) : Substitution | undefined {
+        if(this.type != derived.type) return undefined;
+
+        let subs = this.subformulas.map((f,i)=>f.recognizeSubstitution(derived.subformulas[i]));
+
+        if(subs.some((f)=>f==undefined)) return undefined;
+        if(!Substitution.consistent(subs)) return undefined;
+
+        return Substitution.join(subs);
+    }
+    abstract applySubstitution(sub: Substitution) : Formula;
 }
 
-export function formulaFromString(input: string) : any {
-    let parser = new Parser(Grammar.fromCompiled(grammar));
-    try {
-        parser.feed(input);
-    } catch (err) {
-        console.log("Error at character " + err.offset); // "Error at character 9"
+
+class PropositionFormula extends FormulaBase {
+    type = FormulaType.proposition;
+
+    constructor(readonly symbol: Symbol) {super([])}
+
+    toString(): string { return `p${PropositionFormula.convertNumerToSubscript(this.symbol)}`; }
+    toLatex(): string { return `p_{${this.symbol}}`; }
+    equals(formula: Formula): boolean {
+        return this.type == formula.type && this.symbol == (formula as PropositionFormula).symbol;
     }
-    let parseTree = parser.results[0];
-    parser.finish(); // I think this resets the parser? idk
-    return parseTree;
+    addUsedPropositions(set: Set<Symbol>) : void {
+        set.add(this.symbol);
+    }
+    
+    recognizeSubstitution(derived: Formula) : Substitution | undefined {
+        return new Substitution([[this.symbol, derived]]);
+    }
+
+    applySubstitution(sub: Substitution) : Formula {
+        if(sub.has(this.symbol)) return sub.get(this.symbol);
+        return this;
+    }
+    
+    private static readonly normal = ["0","1","2","3","4","5","6","7","8","9"];
+    private static readonly sub = ["","₀","₁","₂","₃","₄","₅","₆","₇","₈","₉"];
+    private static convertNumerToSubscript(n: number) : string {
+        let input = n.toString();
+        let output = "";
+        for(let i = 0; i < input.length; i++){
+            output+=PropositionFormula.sub[PropositionFormula.normal.indexOf(input.substr(i,i+1))+1];
+        }
+        return output;
+    }
 }
 
-export function formulaToString(formula: any) : string {
-    switch(formula.type) {
-        case "not" : {
-            return `(¬${formulaToString(formula.d)})`
-        }
-        case "or" : {
-            return `(${formulaToString(formula.left)} ∨ ${formulaToString(formula.right)})`
-        }
-        case "and" : {
-            return `(${formulaToString(formula.left)} ∧ ${formulaToString(formula.right)})`
-        }
-        case "implies" : {
-            return `(${formulaToString(formula.left)} → ${formulaToString(formula.right)})`
-        }
-        case "proposition" : {
-            let number = convertNumerToSubscript(formula.n);
-            return `p${number}`
-        }
-        case "contradiction" : {
-            return '⊥';
-        }
+
+class ContradictionFormula extends FormulaBase {
+    type = FormulaType.contradiction;
+    constructor() {super([])}
+
+    toString(): string { return "⊥"; }
+    toLatex(): string { return `\\bot`; }
+
+    recognizeSubstitution(derived: Formula) : Substitution | undefined {
+        if(this.type != derived.type) return undefined;
+        return new Substitution([]);
     }
-    return "";
+
+    applySubstitution(sub: Substitution) : Formula {
+        return new ContradictionFormula();
+    }
 }
 
-function convertNumerToSubscript(n: number) : string {
-    let normal = ["0","1","2","3","4","5","6","7","8","9"];
-    let sub = ["","₀","₁","₂","₃","₄","₅","₆","₇","₈","₉"];
 
-    let input = n.toString();
-    let output = "";
-    for(let i = 0; i < input.length; i++){
-        output+=sub[normal.indexOf(input.substr(i,i+1))+1];
+class NotFormula extends FormulaBase {
+    type = FormulaType.not;
+
+    constructor(f: Formula) { super([f]) }
+
+    toString(): string { return `(¬${this.subformulas[0].toString()})`; }
+    toLatex(): string { return `\\lnot ${this.subformulas[0].toLatex()}`; }
+    applySubstitution(sub: Substitution) : Formula {
+        return new NotFormula(this.subformulas[0].applySubstitution(sub));
     }
-    return output;
 }
 
-export function formulaToLatex(formula: any) : string {
-    switch(formula.type) {
-        case "not" : {
-            return `(\\lnot ${formulaToLatex(formula.d)})`
-        }
-        case "or" : {
-            return `(${formulaToLatex(formula.left)} \\lor ${formulaToLatex(formula.right)})`
-        }
-        case "and" : {
-            return `(${formulaToLatex(formula.left)} \\land ${formulaToLatex(formula.right)})`
-        }
-        case "implies" : {
-            return `(${formulaToLatex(formula.left)} \\rightarrow ${formulaToLatex(formula.right)})`
-        }
-        case "proposition" : {
-            return `p_{${formula.n}}`
-        }
-        case "contradiction" : {
-            return '\\bot';
-        }
+
+class OrFormula extends FormulaBase {
+    type = FormulaType.or;
+
+    constructor(left: Formula, right: Formula) { super([left,right]) }
+
+    toString(): string { return `(${this.subformulas[0].toString()}∨${this.subformulas[1].toString()})`; }
+    toLatex(): string { return `(${this.subformulas[0].toLatex()} \\lor ${this.subformulas[1].toLatex()})`; }
+    applySubstitution(sub: Substitution) : Formula {
+        return new OrFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
     }
-    return "";
+}
+
+
+class AndFormula extends FormulaBase {
+    type = FormulaType.or;
+
+    constructor(left: Formula, right: Formula) {super([left,right])}
+
+    toString(): string { return `(${this.subformulas[0].toString()}∧${this.subformulas[1].toString()})`; }
+    toLatex(): string { return `(${this.subformulas[0].toLatex()} \\lor ${this.subformulas[1].toLatex()})`; }
+    applySubstitution(sub: Substitution) : Formula {
+        return new AndFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
+    }
+}
+
+
+class ImpliesFormula extends FormulaBase {
+    type = FormulaType.or;
+    subformulas : Array<Formula>;
+
+    constructor(left: Formula, right: Formula) {super([left,right])}
+
+    toString(): string { return `(${this.subformulas[0].toString()}→${this.subformulas[1].toString()})`; }
+    toLatex(): string { return `(${this.subformulas[0].toString()} \\rightarrow ${this.subformulas[1].toString()})`; }
+    applySubstitution(sub: Substitution) : Formula {
+        return new ImpliesFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
+    }
+}
+
+
+export type Formula = PropositionFormula | ContradictionFormula | NotFormula | OrFormula | AndFormula | ImpliesFormula;
+export {PropositionFormula, ContradictionFormula, NotFormula, OrFormula, AndFormula, ImpliesFormula};
+
+
+
+export namespace Formula {
+    export function fromString(input: string) : Formula {
+        let parser = new Parser(Grammar.fromCompiled(grammar));
+        try {
+            parser.feed(input);
+        } catch (err) {
+            console.log("Error at character " + err.offset); // "Error at character 9"
+        }
+        let parseTree = parser.results[0];
+        //parser.finish(); // I think this resets the parser? idk
+        return createFormula(parseTree);
+    }
+
+    function createFormula(parseTree: any) : Formula {
+        switch(parseTree.subformulas.length){
+            case 0:{
+                if(parseTree.type==="contradiction"){
+                    return new ContradictionFormula();
+                } else if(parseTree.type==="proposition"){
+                    return new PropositionFormula(parseTree.n);
+                }
+                break;
+            }
+            case 1:{
+                if(parseTree.type==="not"){
+                    return new NotFormula(createFormula(parseTree.subformulas[0]));
+                }
+                break;
+            }
+            case 2:{
+                if(parseTree.type==="or"){
+                    return new OrFormula(createFormula(parseTree.subformulas[0]), createFormula(parseTree.subformulas[1]));
+                } else if(parseTree.type === "and"){
+                    return new AndFormula(createFormula(parseTree.subformulas[0]), createFormula(parseTree.subformulas[1]));
+                } else if(parseTree.type === "implies"){
+                    return new ImpliesFormula(createFormula(parseTree.subformulas[0]), createFormula(parseTree.subformulas[1]));
+                }
+                break;
+            }
+        }
+        return null;
+    }
 }
