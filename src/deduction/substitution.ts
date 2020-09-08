@@ -14,7 +14,7 @@ export class Substitution {
         return false;
     }
 
-    usedPropositions() : Set<Symbol>{
+    boundPropositions() : Set<Symbol>{
         return new Set(this.mapping.keys());
     }
 

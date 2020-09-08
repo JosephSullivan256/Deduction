@@ -25,13 +25,13 @@ abstract class FormulaBase {
             this.arity == formula.arity &&
             this.subformulas.every((f,i)=>f.equals(formula.subformulas[i]));
     }
-    usedPropositions() : Set<Symbol> {
+    boundPropositions() : Set<Symbol> {
         let set = new Set<number>();
-        this.addUsedPropositions(set);
+        this.addBoundPropositions(set);
         return set;
     }
-    addUsedPropositions(set: Set<Symbol>) : void {
-        this.subformulas.forEach((f)=>f.addUsedPropositions(set));
+    addBoundPropositions(set: Set<Symbol>) : void {
+        this.subformulas.forEach((f)=>f.addBoundPropositions(set));
     }
     recognizeSubstitution(derived: Formula) : Substitution | undefined {
         if(this.type != derived.type) return undefined;
@@ -57,7 +57,7 @@ class PropositionFormula extends FormulaBase {
     equals(formula: Formula): boolean {
         return this.type == formula.type && this.symbol == (formula as PropositionFormula).symbol;
     }
-    addUsedPropositions(set: Set<Symbol>) : void {
+    addBoundPropositions(set: Set<Symbol>) : void {
         set.add(this.symbol);
     }
     
@@ -119,7 +119,7 @@ class OrFormula extends FormulaBase {
 
     constructor(left: Formula, right: Formula) { super([left,right]) }
 
-    toString(): string { return `(${this.subformulas[0].toString()}∨${this.subformulas[1].toString()})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} ∨ ${this.subformulas[1].toString()})`; }
     toLatex(): string { return `(${this.subformulas[0].toLatex()} \\lor ${this.subformulas[1].toLatex()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new OrFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
@@ -132,8 +132,8 @@ class AndFormula extends FormulaBase {
 
     constructor(left: Formula, right: Formula) {super([left,right])}
 
-    toString(): string { return `(${this.subformulas[0].toString()}∧${this.subformulas[1].toString()})`; }
-    toLatex(): string { return `(${this.subformulas[0].toLatex()} \\lor ${this.subformulas[1].toLatex()})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} ∧ ${this.subformulas[1].toString()})`; }
+    toLatex(): string { return `(${this.subformulas[0].toLatex()} \\land ${this.subformulas[1].toLatex()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new AndFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
     }
@@ -146,7 +146,7 @@ class ImpliesFormula extends FormulaBase {
 
     constructor(left: Formula, right: Formula) {super([left,right])}
 
-    toString(): string { return `(${this.subformulas[0].toString()}→${this.subformulas[1].toString()})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} → ${this.subformulas[1].toString()})`; }
     toLatex(): string { return `(${this.subformulas[0].toString()} \\rightarrow ${this.subformulas[1].toString()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new ImpliesFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
