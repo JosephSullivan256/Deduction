@@ -28,7 +28,7 @@ export class Substitution {
     }
 
     static join(subs: Array<Substitution>) : Substitution {
-        return subs.reduce((joinedSubs, sub)=>joinedSubs.join(sub));
+        return subs.reduce((joinedSubs, sub)=>joinedSubs.join(sub), new Substitution([]));
     }
 
     // only well-behaved if "conflictsWith" returns false

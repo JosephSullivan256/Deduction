@@ -5,13 +5,20 @@ export default class DeductionComponent {
 
     constructor(public deduction: Deduction, public pos: Vec2) {}
 
-    draw(ctx: CanvasRenderingContext2D) : void {
-        this.drawNode(ctx, this.pos, this.deduction);
+    contains(ctx: CanvasRenderingContext2D, cursor: Vec2) : boolean {
+        let rootWidth = ctx.measureText(this.deduction.result.conclusion.toString()).width;
+        
+        if( Math.abs(cursor.x-this.pos.x) < rootWidth/2.0 && Math.abs(cursor.y-this.pos.y) < DeductionComponent.spacing.y/2.0) return true;
+        return false;
     }
 
-    private readonly spacing = new Vec2(100.0, 40.0);
+    draw(ctx: CanvasRenderingContext2D) : void {
+        DeductionComponent.drawNode(ctx, this.pos, this.deduction);
+    }
 
-    private drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction) : void {
+    private static readonly spacing = new Vec2(100.0, 40.0);
+
+    private static drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction) : void {
         let root = node.result.conclusion.toString();
         let children = node.children;
 
@@ -22,11 +29,11 @@ export default class DeductionComponent {
         let widths: Array<number> = [];
         let totalWidth = 0;
         for(let i = 0; i < children.length; i++){
-            widths.push(children[i].getWidth(ctx));
+            widths.push(this.getWidth(ctx, children[i]));
             if(i==0 || i==children.length-1){
-                totalWidth+=children[i].getWidth(ctx)/2.0;
+                totalWidth+=this.getWidth(ctx, children[i])/2.0;
             } else {
-                totalWidth+=children[i].getWidth(ctx);
+                totalWidth+=this.getWidth(ctx, children[i]);
             }
         }
         totalWidth+=this.spacing.x*(children.length-1);
@@ -55,10 +62,10 @@ export default class DeductionComponent {
         }
     }
 
-    private getWidth(ctx: CanvasRenderingContext2D) : number {
-        if(this.deduction.children.length==0){
-            return ctx.measureText(this.deduction.result.conclusion.toString()).width;
+    private static getWidth(ctx: CanvasRenderingContext2D, deduction: Deduction) : number {
+        if(deduction.children.length==0){
+            return ctx.measureText(deduction.result.conclusion.toString()).width;
         }
-        return this.deduction.children.reduce((a,b)=>a+b.getWidth(ctx), 0) + this.spacing.x*(this.deduction.children.length-1);
+        return deduction.children.reduce((a,b)=>a+this.getWidth(ctx,b), 0) + this.spacing.x*(deduction.children.length-1);
     }
 }

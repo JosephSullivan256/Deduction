@@ -49,7 +49,7 @@ export class Rule {
         potentialDeductions.filter(f=> deduction.applySubstitution(sub).equals(f[0]));
         if(potentialDeductions.length == 0) return undefined;
         
-        return new RuleApplication(potentialDeductions[0][0], sub, this);
+        return new RuleApplication(deduction, sub, this);
     }
 
 }
@@ -62,27 +62,33 @@ export class RuleApplication {
     }
 
     static assumption(f: Formula) : RuleApplication {
-        return new RuleApplication(f, new Substitution([]), rules["assumption"]);
+        return new RuleApplication(f, new Substitution([]), getRules().get("assumption"));
     }
 }
 
-export let rules = {
-    "assumption": new Rule(
+export function getRules() : Map<string, Rule> {
+    let map = new Map<string, Rule>();
+    
+    map.set("assumption", new Rule(
         "(A)",
         [],
         [Formula.fromString("p0")],
         []
-    ),
-    "introduce and": new Rule(
+    ));
+
+    map.set("introduce and", new Rule(
         "(∧I)",
         [Formula.fromString("p0"), Formula.fromString("p1")],
         [Formula.fromString("(p0 and p1)")],
         []
-    ),
-    "eliminate and": new Rule(
+    ));
+
+    map.set("eliminate and", new Rule(
         "(∧E)",
         [Formula.fromString("(p0 and p1)")],
         [Formula.fromString("p0"), Formula.fromString("p1")],
         []
-    )
-};
+    ))
+
+    return map;
+}
