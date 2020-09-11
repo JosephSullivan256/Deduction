@@ -46,11 +46,17 @@ export default class RuleComponent {
         if(!formula) return;
 
         let conclusion = this.rule.apply(
-            this.scene.selected.map(dc=>dc.deduction.result.conclusion),
+            Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion),
             formula
         );
 
         if(conclusion) this.scene.joinSelected(conclusion);
         console.log("successful");
+    }
+
+    update() : void {
+        let suggestions = this.rule.suggestConclusions(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion))[0]
+            .map(([conclusion, free])=>conclusion.toStringFree(free));
+        this.suggestions.innerHTML = suggestions.map(formula=>formula.toString()).join(", ");
     }
 }

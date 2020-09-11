@@ -1,5 +1,6 @@
 import Deduction from '../deduction/deduction';
 import Vec2 from '../math/vec2';
+import { Formula } from '../deduction/formula';
 
 export default class DeductionComponent {
 
@@ -13,17 +14,23 @@ export default class DeductionComponent {
     }
 
     draw(ctx: CanvasRenderingContext2D) : void {
-        DeductionComponent.drawNode(ctx, this.pos, this.deduction);
+        DeductionComponent.drawNode(ctx, this.pos, this.deduction, []);
     }
 
     private static readonly spacing = new Vec2(100.0, 40.0);
 
-    private static drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction) : void {
+    private static drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction, dischargeable: Array<Formula>) : void {
         let root = node.result.conclusion.toString();
         let children = node.children;
 
         let width = ctx.measureText(root).width;
         ctx.fillText(root, pos.x, pos.y);
+        if(dischargeable.some(formula=>formula.equals(node.result.conclusion))){
+            ctx.beginPath();
+            ctx.moveTo(pos.x+width*0.6, pos.y-DeductionComponent.spacing.y/2.0);
+            ctx.lineTo(pos.x-width*0.6, pos.y+DeductionComponent.spacing.y/2.0);
+            ctx.stroke();
+        }
 
         // first, get the width of each subtree
         let widths: Array<number> = [];
@@ -31,7 +38,7 @@ export default class DeductionComponent {
         for(let i = 0; i < children.length; i++){
             widths.push(this.getWidth(ctx, children[i]));
             if(i==0 || i==children.length-1){
-                totalWidth+=this.getWidth(ctx, children[i])/2.0;
+                if(children.length>1) totalWidth+=this.getWidth(ctx, children[i])/2.0;
             } else {
                 totalWidth+=this.getWidth(ctx, children[i]);
             }
@@ -58,7 +65,9 @@ export default class DeductionComponent {
             if(i!=0) progress+=widths[i-1]/2.0+widths[i]/2.0+this.spacing.x;
 
             let offset = progress-totalWidth/2.0;
-            this.drawNode(ctx, pos.plus(new Vec2(offset,-this.spacing.y)), children[i]);
+            let new_dischargeable = [...dischargeable];
+            if(node.result.rule.discharged.has(i)) new_dischargeable.push(node.result.rule.discharged.get(i));
+            this.drawNode(ctx, pos.plus(new Vec2(offset,-this.spacing.y)), children[i], new_dischargeable);
         }
     }
 

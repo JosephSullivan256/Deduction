@@ -14,44 +14,34 @@ export default class Scene {
     private rules_components: Array<RuleComponent>;
     private deduction_components: Array<DeductionComponent>;
 
-    selected: Array<DeductionComponent>;
+    selected: Set<DeductionComponent>;
 
     constructor() {
         this.initCanvas();
         this.initRuleComponents();
         this.deduction_components = [];
+        this.selected = new Set();
 
-        let rules = getRules();
-
-        this.deduction_components.push(
-            new DeductionComponent(new Deduction(RuleApplication.assumption(Formula.fromString("p0"))), new Vec2(100,100))
-        )
-        this.deduction_components.push(
-            new DeductionComponent(new Deduction(RuleApplication.assumption(Formula.fromString("(p1 and p2)"))), new Vec2(300,100))
-        )
-
-        this.selected = this.deduction_components;
-
-        //let assumptions = [d1.result.conclusion, d2.result.conclusion];
-        //let conclusion = rules.get("introduce and").apply(assumptions, rules.get("introduce and").suggestConclusions(assumptions)[0][0][0]);
-        //let d3 = Deduction.join(conclusion, d1,d2)
-
-        //d1.draw(this.ctx, new Vec2(100,100));
-        //d2.draw(this.ctx, new Vec2(300,100));
-        //this.deduction_components.push(new DeductionComponent(d3, new Vec2(200,100)))
-        //console.log(t.toString());
-
-        this.draw();
+        this.update();
     }
 
     joinSelected(rule_app: RuleApplication) : void {
-        this.deduction_components = this.deduction_components.filter(dc=> !this.selected.includes(dc));
+        this.deduction_components = this.deduction_components.filter(dc=> !this.selected.has(dc));
+        let selected_array = Array.from(this.selected);
         this.deduction_components.push(
-            new DeductionComponent(new Deduction(rule_app, ...this.selected.map(dc=>dc.deduction)),
-            this.selected.map(dc=>dc.pos).reduce((sum, val) => sum.plus(val.minus(this.center)), new Vec2(0,0)).scaledBy(1.0/Math.max(1,this.selected.length)).plus(this.center)
+            new DeductionComponent(new Deduction(rule_app, ...selected_array.map(dc=>dc.deduction)),
+            selected_array.map(dc=>dc.pos).reduce((sum, val) => sum.plus(val.minus(this.center)), new Vec2(0,0)).scaledBy(1.0/Math.max(1,selected_array.length)).plus(this.center).plus(new Vec2(Math.random()-0.5,Math.random()-0.5).scaledBy(100))
         ));
         console.log(this.deduction_components);
-        this.selected = [];
+        this.selected = new Set();
+        this.update();
+    }
+
+    update() : void {
+        for(let rc of this.rules_components){
+            rc.update();
+        }
+
         this.draw();
     }
 
@@ -62,7 +52,7 @@ export default class Scene {
 
         for(let dc of this.deduction_components){
             
-            if(this.selected.includes(dc)){
+            if(this.selected.has(dc)){
                 this.ctx.fillStyle = "rgb(255,0,0)";
                 this.ctx.strokeStyle = "rgb(255,0,0)";
             }
@@ -76,16 +66,16 @@ export default class Scene {
     select(cursor: Vec2) : void {
         for(let dc of this.deduction_components){
             if(dc.contains(this.ctx, cursor)) {
-                this.selected.push(dc);
+                this.selected.add(dc);
                 break;
             }
         }
-        this.draw();
+        this.update();
     }
 
     clearSelection() : void {
-        this.selected = [];
-        this.draw();
+        this.selected = new Set();
+        this.update();
     }
 
     initCanvas() : void {
