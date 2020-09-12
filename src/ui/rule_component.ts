@@ -58,12 +58,20 @@ export default class RuleComponent {
     }
 
     update() : void {
+        this.suggestions.innerHTML = "";
         let sub = this.rule.suggestSubstitution(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion));
-        let suggestions : string[] = [];
         if(sub) {
-            suggestions=this.rule.conclusions.map(f=>f.toStringSubbed(sub));
+            this.rule.conclusions.forEach(f=>{
+                let button = document.createElement("input");
+                button.type = "button";
+                button.classList.add("button");
+                button.classList.add("is-info");
+                button.value = f.toStringSubbed(sub);
+                button.onclick = ()=> this.textbox.value = button.value;
+                this.suggestions.appendChild(button);
+            })
         }
-        this.suggestions.innerHTML = suggestions.join(", ");
+        //this.suggestions.innerHTML = suggestions.join(", ");
         //let suggestions = this.rule.suggestConclusions(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion))[0]
         //    .map(([conclusion, free])=>conclusion.toStringFree(free));
         //this.suggestions.innerHTML = suggestions.map(formula=>formula.toString()).join(", ");

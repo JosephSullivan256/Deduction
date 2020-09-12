@@ -179,6 +179,7 @@ export namespace Formula {
         }
         let parseTree = parser.results[0];
         //parser.finish(); // I think this resets the parser? idk
+        console.log(parseTree);
         return createFormula(parseTree);
     }
 

@@ -7,8 +7,8 @@ Or -> "(" Formula _ or _ Formula ")" {% function(d) {return {type:'or', subformu
 Implies -> "(" Formula _ implies _ Formula ")" {% function(d) {return {type:'implies', subformulas:[d[1][0],d[5][0]]}} %}
 
 Proposition -> ("p" number | "p_{" number "}") {% function(d) {return {type:'proposition', subformulas:[], n:d[0][1]}} %}
-| "p_" [0-9] {% function(d) {return {type:'proposition', n:parseInt(d[1])}} %}
-| "p" subnumber {% function(d) {return {type:'proposition', n:d[1]}} %}
+| "p_" [0-9] {% function(d) {return {type:'proposition', subformulas:[], n:parseInt(d[1])}} %}
+| "p" subnumber {% function(d) {return {type:'proposition', subformulas:[], n:d[1]}} %}
 
 Contradiction -> contradiction {% function(d) {return {type:'contradiction', subformulas:[]}}%}
 
