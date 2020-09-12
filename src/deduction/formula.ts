@@ -18,10 +18,8 @@ abstract class FormulaBase {
         return this.subformulas.length;
     }
 
-    abstract toStringFree(set: Set<Symbol>) : string;
-    toString() : string {
-        return this.toStringFree(new Set());
-    }
+    abstract toStringSubbed(sub: Substitution) : string;
+    abstract toString() : string;
     abstract toLatex() : string;
     equals(formula: Formula) : boolean {
         return this.type==formula.type &&
@@ -55,9 +53,11 @@ class PropositionFormula extends FormulaBase {
 
     constructor(readonly symbol: Symbol) {super([])}
 
-    toStringFree(set: Set<Symbol>): string { 
-        if(set.has(this.symbol)) return '_';
-        return `p${PropositionFormula.convertNumerToSubscript(this.symbol)}`;
+    toString() : string { return `p${PropositionFormula.convertNumerToSubscript(this.symbol)}`; }
+
+    toStringSubbed(sub: Substitution) : string { 
+        if(sub.has(this.symbol)) return sub.get(this.symbol).toString();
+        return '_';
     }
     toLatex(): string { return `p_{${this.symbol}}`; }
     equals(formula: Formula): boolean {
@@ -93,7 +93,8 @@ class ContradictionFormula extends FormulaBase {
     type = FormulaType.contradiction;
     constructor() {super([])}
 
-    toStringFree(set: Set<Symbol>): string { return "⊥"; }
+    toString(): string { return "⊥"; }
+    toStringSubbed(sub: Substitution): string { return "⊥"; }
     toLatex(): string { return `\\bot`; }
 
     recognizeSubstitution(derived: Formula) : Substitution | undefined {
@@ -112,7 +113,8 @@ class NotFormula extends FormulaBase {
 
     constructor(f: Formula) { super([f]) }
 
-    toStringFree(set: Set<Symbol>): string { return `(¬${this.subformulas[0].toStringFree(set)})`; }
+    toString(): string { return `(¬${this.subformulas[0].toString()})`; }
+    toStringSubbed(sub: Substitution): string { return `(¬${this.subformulas[0].toStringSubbed(sub)})`; }
     toLatex(): string { return `\\lnot ${this.subformulas[0].toLatex()}`; }
     applySubstitution(sub: Substitution) : Formula {
         return new NotFormula(this.subformulas[0].applySubstitution(sub));
@@ -124,8 +126,8 @@ class OrFormula extends FormulaBase {
     type = FormulaType.or;
 
     constructor(left: Formula, right: Formula) { super([left,right]) }
-
-    toStringFree(set: Set<Symbol>): string { return `(${this.subformulas[0].toStringFree(set)} ∨ ${this.subformulas[1].toStringFree(set)})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} ∨ ${this.subformulas[1].toString()})`; }
+    toStringSubbed(sub: Substitution): string { return `(${this.subformulas[0].toStringSubbed(sub)} ∨ ${this.subformulas[1].toStringSubbed(sub)})`; }
     toLatex(): string { return `(${this.subformulas[0].toLatex()} \\lor ${this.subformulas[1].toLatex()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new OrFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
@@ -138,7 +140,8 @@ class AndFormula extends FormulaBase {
 
     constructor(left: Formula, right: Formula) {super([left,right])}
 
-    toStringFree(set: Set<Symbol>): string { return `(${this.subformulas[0].toStringFree(set)} ∧ ${this.subformulas[1].toStringFree(set)})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} ∧ ${this.subformulas[1].toString()})`; }
+    toStringSubbed(sub: Substitution): string { return `(${this.subformulas[0].toStringSubbed(sub)} ∧ ${this.subformulas[1].toStringSubbed(sub)})`; }
     toLatex(): string { return `(${this.subformulas[0].toLatex()} \\land ${this.subformulas[1].toLatex()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new AndFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));
@@ -152,7 +155,8 @@ class ImpliesFormula extends FormulaBase {
 
     constructor(left: Formula, right: Formula) {super([left,right])}
 
-    toStringFree(set: Set<Symbol>): string { return `(${this.subformulas[0].toStringFree(set)} → ${this.subformulas[1].toStringFree(set)})`; }
+    toString(): string { return `(${this.subformulas[0].toString()} → ${this.subformulas[1].toString()})`; }
+    toStringSubbed(sub: Substitution): string { return `(${this.subformulas[0].toStringSubbed(sub)} → ${this.subformulas[1].toStringSubbed(sub)})`; }
     toLatex(): string { return `(${this.subformulas[0].toLatex()} \\rightarrow ${this.subformulas[1].toLatex()})`; }
     applySubstitution(sub: Substitution) : Formula {
         return new ImpliesFormula(this.subformulas[0].applySubstitution(sub),this.subformulas[1].applySubstitution(sub));

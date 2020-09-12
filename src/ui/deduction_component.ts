@@ -1,6 +1,7 @@
 import Deduction from '../deduction/deduction';
 import Vec2 from '../math/vec2';
 import { Formula } from '../deduction/formula';
+import { Substitution } from '../deduction/substitution';
 
 export default class DeductionComponent {
 
@@ -19,13 +20,13 @@ export default class DeductionComponent {
 
     private static readonly spacing = new Vec2(100.0, 40.0);
 
-    private static drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction, dischargeable: Array<Formula>) : void {
+    private static drawNode(ctx: CanvasRenderingContext2D, pos: Vec2, node: Deduction, dischargeable: Array<[Formula, Substitution]>) : void {
         let root = node.result.conclusion.toString();
         let children = node.children;
 
         let width = ctx.measureText(root).width;
         ctx.fillText(root, pos.x, pos.y);
-        if(dischargeable.some(formula=>formula.equals(node.result.conclusion))){
+        if(dischargeable.some(([formula, sub])=> !formula.recognizeSubstitution(node.result.conclusion).conflictsWith(sub))){
             ctx.beginPath();
             ctx.moveTo(pos.x+width*0.6, pos.y-DeductionComponent.spacing.y/2.0);
             ctx.lineTo(pos.x-width*0.6, pos.y+DeductionComponent.spacing.y/2.0);
@@ -66,7 +67,7 @@ export default class DeductionComponent {
 
             let offset = progress-totalWidth/2.0;
             let new_dischargeable = [...dischargeable];
-            if(node.result.rule.discharged.has(i)) new_dischargeable.push(node.result.rule.discharged.get(i));
+            if(node.result.rule.discharged.has(i)) new_dischargeable.push([node.result.rule.discharged.get(i), node.result.sub]);
             this.drawNode(ctx, pos.plus(new Vec2(offset,-this.spacing.y)), children[i], new_dischargeable);
         }
     }

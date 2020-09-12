@@ -55,8 +55,14 @@ export default class RuleComponent {
     }
 
     update() : void {
-        let suggestions = this.rule.suggestConclusions(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion))[0]
-            .map(([conclusion, free])=>conclusion.toStringFree(free));
-        this.suggestions.innerHTML = suggestions.map(formula=>formula.toString()).join(", ");
+        let sub = this.rule.suggestSubstitution(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion));
+        let suggestions : string[] = [];
+        if(sub) {
+            suggestions=this.rule.conclusions.map(f=>f.toStringSubbed(sub));
+        }
+        this.suggestions.innerHTML = suggestions.join(", ");
+        //let suggestions = this.rule.suggestConclusions(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion))[0]
+        //    .map(([conclusion, free])=>conclusion.toStringFree(free));
+        //this.suggestions.innerHTML = suggestions.map(formula=>formula.toString()).join(", ");
     }
 }

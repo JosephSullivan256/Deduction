@@ -53,12 +53,15 @@ export class Rule {
         ), sub];
     }
 
-    apply(asssumptions: Array<Formula>, deduction: Formula) : RuleApplication {
-        let [potentialDeductions, sub] = this.suggestConclusions(asssumptions);
-        potentialDeductions.filter(f=> deduction.applySubstitution(sub).equals(f[0]));
-        if(potentialDeductions.length == 0) return undefined;
-        
-        return new RuleApplication(deduction, sub, this);
+    apply(asssumptions: Array<Formula>, conclusion: Formula) : RuleApplication {
+        let assumptionSub = this.suggestSubstitution(asssumptions);
+        if(!assumptionSub) return undefined;
+
+        let conclusionSubs = this.conclusions.map(c=> c.recognizeSubstitution(conclusion));
+        let viableConclusionSubs = conclusionSubs.filter(sub => !sub.conflictsWith(assumptionSub));
+
+        if(viableConclusionSubs.length == 0) return undefined;
+        return new RuleApplication(conclusion, viableConclusionSubs[0].join(assumptionSub), this);
     }
 
 }
