@@ -58,13 +58,15 @@ export default class RuleComponent {
         let sub = this.rule.suggestSubstitution(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion));
         if(sub) {
             this.rule.conclusions.forEach(f=>{
-                let button = document.createElement("input");
+                let control = document.createElement("p");
+                control.classList.add("control")
+                let button = control.appendChild(document.createElement("input"));
                 button.type = "button";
                 button.classList.add("button");
                 button.classList.add("is-info");
                 button.value = f.toStringSubbed(sub);
                 button.onclick = ()=> this.textbox.value = button.value;
-                this.suggestions.appendChild(button);
+                this.suggestions.appendChild(control);
             })
             this.textbox.disabled = false;
             this.button.disabled = false;
