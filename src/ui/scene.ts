@@ -46,7 +46,8 @@ export default class Scene {
     }
 
     draw() : void {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "rgb(255,255,255)";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         let style = this.ctx.fillStyle;
 
