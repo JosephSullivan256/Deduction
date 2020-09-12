@@ -16,8 +16,9 @@ export default class RuleComponent {
         this.rule = rule;
         let container = document.getElementById(id);
 
-        this.textbox = document.createElement("input");
+        this.textbox = container.querySelector(".deduction-textbox") ?? document.createElement("input");
         this.textbox.type = "text";
+        this.textbox.classList.add("deduction-textbook");
         this.textbox.addEventListener("keydown", ({key}) => {
             if (key === "Enter") {
                 event.preventDefault();
@@ -25,12 +26,14 @@ export default class RuleComponent {
             }
         })
 
-        this.button = document.createElement("button");
+        this.button = container.querySelector(".deduction-button") ?? document.createElement("input");
         this.button.type = "button";
-        this.button.innerHTML = this.rule.name;
+        this.button.classList.add("deduction-button");
+        this.button.value = this.rule.name;
         this.button.onclick = ()=>this.apply();
 
-        this.suggestions = document.createElement("p");
+        this.suggestions = container.querySelector(".deduction-suggestions") ?? document.createElement("p");
+        this.suggestions.classList.add("deduction-suggestions");
 
         container.appendChild(this.textbox);
         container.appendChild(this.button);
