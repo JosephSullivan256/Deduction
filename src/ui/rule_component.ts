@@ -70,6 +70,11 @@ export default class RuleComponent {
                 button.onclick = ()=> this.textbox.value = button.value;
                 this.suggestions.appendChild(button);
             })
+            this.textbox.disabled = false;
+            this.button.disabled = false;
+        } else {
+            this.button.disabled = true;
+            this.textbox.disabled = true;
         }
         //this.suggestions.innerHTML = suggestions.join(", ");
         //let suggestions = this.rule.suggestConclusions(Array.from(this.scene.selected).map(dc=>dc.deduction.result.conclusion))[0]
