@@ -18,6 +18,12 @@ export default class Scene {
     private rules_components: Array<RuleComponent>;
     private deduction_components: Array<DeductionComponent>;
 
+    private undoButton: HTMLButtonElement;
+    private redoButton: HTMLButtonElement;
+
+    private undo_stack: Array<DeductionComponent>[];
+    private redo_stack: Array<DeductionComponent>[];
+
     private mouseDown : boolean;
     private dragged : DeductionComponent;
 
@@ -28,6 +34,8 @@ export default class Scene {
         this.addCanvasEvents();
         this.initRuleComponents();
         this.deduction_components = [];
+        this.undo_stack = [];
+        this.redo_stack = [];
         this.selected = new Set();
 
         this.old_translate = new Vec2(0, 0);
@@ -37,6 +45,9 @@ export default class Scene {
     }
 
     joinSelected(rule_app: RuleApplication) : void {
+        this.undo_stack.push(this.deduction_components);
+        this.redo_stack = [];
+
         this.deduction_components = this.deduction_components.filter(dc=> !this.selected.has(dc));
         let selected_array = Array.from(this.selected);
         let pos = this.center.minus(this.translate);
@@ -46,12 +57,16 @@ export default class Scene {
             new DeductionComponent(new Deduction(rule_app, ...selected_array.map(dc=>dc.deduction)),
             pos
         ));
-        console.log(this.deduction_components);
+        
         this.selected = new Set();
         this.update();
     }
 
     update() : void {
+        this.undoButton.disabled = false;
+        this.redoButton.disabled = false;
+        if(this.undo_stack.length == 0) this.undoButton.disabled = true;
+        if(this.redo_stack.length == 0) this.redoButton.disabled = true;
         for(let rc of this.rules_components){
             rc.update();
         }
@@ -97,6 +112,20 @@ export default class Scene {
     clearSelection() : void {
         this.selected = new Set();
         this.update();
+    }
+
+    undo() : void {
+        this.redo_stack.push(this.deduction_components);
+        let state = this.undo_stack.pop();
+        if(state) this.deduction_components = state;
+        this.clearSelection()
+    }
+
+    redo() : void {
+        this.undo_stack.push(this.deduction_components);
+        let state = this.redo_stack.pop();
+        if(state) this.deduction_components = state;
+        this.clearSelection();
     }
 
     initCanvas() : void {
@@ -198,6 +227,16 @@ export default class Scene {
         let clearButton = document.getElementById("clear selection");
         if(clearButton) clearButton.addEventListener("click", ()=>{
             this.clearSelection();
-        })
+        });
+
+        this.undoButton = document.getElementById("undo") as HTMLButtonElement;
+        this.undoButton.addEventListener("click", ()=>{
+            this.undo();
+        });
+
+        this.redoButton = document.getElementById("redo") as HTMLButtonElement;
+        this.redoButton.addEventListener("click", ()=>{
+            this.redo();
+        });
     }
 }
