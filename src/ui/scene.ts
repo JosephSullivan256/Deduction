@@ -195,7 +195,8 @@ export default class Scene {
             this.rules_components.push(new RuleComponent(this, id, rule));
         }
 
-        document.getElementById("clear selection").addEventListener("click", ()=>{
+        let clearButton = document.getElementById("clear selection");
+        if(clearButton) clearButton.addEventListener("click", ()=>{
             this.clearSelection();
         })
     }
