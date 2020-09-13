@@ -7,4 +7,5 @@ export default class Vec2 {
     minus(v: Vec2) : Vec2 { return this.plus(v.scaledBy(-1.0)); }
 
     dot(v: Vec2) : number { return this.x*v.x + this.y*v.y; }
+    d2() : number { return this.dot(this); }
 }
