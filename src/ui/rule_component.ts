@@ -39,7 +39,6 @@ export default class RuleComponent {
     apply() : void {
         let value = this.textbox.value;
         this.textbox.value = "";
-        console.log(this.rule);
 
         let formula = Formula.fromString(value);
         if(!formula) return;
@@ -49,8 +48,10 @@ export default class RuleComponent {
             formula
         );
 
-        if(conclusion) this.scene.joinSelected(conclusion);
-        console.log("successful");
+        if(conclusion){
+            this.scene.joinSelected(conclusion);
+            console.log(conclusion);
+        }
     }
 
     update() : void {

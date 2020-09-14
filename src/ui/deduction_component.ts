@@ -26,7 +26,10 @@ export default class DeductionComponent {
 
         let width = ctx.measureText(root).width;
         ctx.fillText(root, pos.x, pos.y);
-        if(dischargeable.some(([formula, sub])=> !formula.recognizeSubstitution(node.result.conclusion).conflictsWith(sub))){
+        if(node.children.length==0 && dischargeable.some(([formula, sub])=> {
+            let sub2 = formula.recognizeSubstitution(node.result.conclusion);
+            return sub2 && !sub2.conflictsWith(sub)
+        })){
             ctx.beginPath();
             ctx.moveTo(pos.x+width*0.6, pos.y-DeductionComponent.spacing.y/2.0);
             ctx.lineTo(pos.x-width*0.6, pos.y+DeductionComponent.spacing.y/2.0);
